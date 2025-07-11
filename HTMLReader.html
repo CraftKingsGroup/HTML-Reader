@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Email Viewer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background-color: #f7f7f7;
+    }
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #ccc;
+      background: white;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>HTML Email Viewer</h1>
+  <p id="meta"></p>
+  <div id="output"></div>
+
+  <script>
+    const airtableApiKey = "YOUR_AIRTABLE_API_KEY";
+    const baseId = "YOUR_BASE_ID";
+    const tableName = "YOUR_TABLE_NAME"; // e.g., "Emails"
+    const htmlFieldName = "HTML Body";   // case-sensitive!
+
+    const params = new URLSearchParams(window.location.search);
+    const recordId = params.get("record");
+
+    if (!recordId) {
+      document.getElementById("output").innerHTML =
+        '<p class="error">No record ID provided in the URL.</p>';
+    } else {
+      document.getElementById("meta").textContent = `Loading record ${recordId}...`;
+
+      fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${recordId}`, {
+        headers: {
+          Authorization: `Bearer ${airtableApiKey}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          const html = data.fields[htmlFieldName];
+          const subject = data.fields["Subject"] || "(No Subject)";
+          document.getElementById("meta").innerHTML = `<strong>Subject:</strong> ${subject}`;
+          document.getElementById("output").innerHTML =
+            `<iframe srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>`;
+        })
+        .catch(err => {
+          document.getElementById("output").innerHTML =
+            `<p class="error">Error fetching record: ${err.message}</p>`;
+        });
+    }
+  </script>
+</body>
+</html>
